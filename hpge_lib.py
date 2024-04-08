@@ -1,6 +1,18 @@
 import numpy as np
 
 def open_data(data_source):
+    """
+    Open a .mpa file and returns the data saved as a Python list and the information necessary to
+    split by different ADCs 
+    Input:
+    - data_source: path of the .mpa file
+    Output: 
+    - datas        : Python list containing all the data read from the .mpa text file 
+    - adcs_flag_pos: indexes of the cells in the "datas" list containing the first row
+                     of the ADCs' headers
+    - data_flag_pos: indexes of the cells in the "datas" list containing the first row
+                     of the ADCs' data
+    """
 
     with open(data_source, 'r') as data_file:
         datas = data_file.read().splitlines()
@@ -17,7 +29,22 @@ def open_data(data_source):
 
     return datas, adcs_flag_pos, data_flag_pos
 
-def read_data(datas, adc_num, adcs_flag_pos, data_flag_pos):
+def read_ADC_data(datas, adc_num, adcs_flag_pos, data_flag_pos):
+    """
+    Read the header and the counts data of a selected ADC
+    Input:
+    - datas        : path of the .mpa file
+    - adc_num      : ADC to analyse 
+    - adcs_flag_pos: indexes of the cells in the "datas" list containing the first row
+                     of the ADCs' headers
+    - data_flag_pos: indexes of the cells in the "datas" list containing the first row
+                     of the ADCs' data
+    Output: 
+    - adc_header     : Header of the ADC (dictionary) 
+    - adc_data       : Counts read by the ADC
+    - adc_data_errors: Errors on the counts (evaluated as the square root of the counts
+                                            read by the ADC)
+    """
 
     raw_adc_header = datas[adcs_flag_pos[adc_num-1]:adcs_flag_pos[adc_num]]
     adc_header = {}
@@ -37,6 +64,14 @@ def read_data(datas, adc_num, adcs_flag_pos, data_flag_pos):
     return adc_header, adc_data, adc_data_errors
 
 def calibrate(adc_header):
+    """
+    Calibrate the ADC data using the calibration factors saved in the ADC header
+    Input:
+    - adc_header     : Header of the ADC (dictionary) 
+    Output: 
+    - channels: Channels of the ADC
+    - energies: Channels as calibrated energies
+    """
     calibration_coeffs = [adc_header['caloff'], adc_header['calfact'], adc_header['calfact2'], adc_header['calfact3']]
     channels           = np.array(range(int(adc_header['range'])))
     energies           = calibration_coeffs[0] + calibration_coeffs[1]*channels + calibration_coeffs[2]*channels**2 + calibration_coeffs[3]*channels**3
@@ -45,6 +80,11 @@ def calibrate(adc_header):
 
 
 def configure_ADC():
+    """
+    Change the ADC to analyse
+    Output: 
+    - adc_num: ADC to analyse 
+    """
     cont = True
 
     while cont:
@@ -64,6 +104,11 @@ def configure_ADC():
     return adc_num
 
 def configure_scale():
+    """
+    Change the scale used to plot the data (linear or log)
+    Output: 
+    - log_scale: If True, plot in log scale. Otherwise, plot in linear scale
+    """
     cont = True
 
     while cont:
